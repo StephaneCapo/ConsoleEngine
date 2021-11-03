@@ -1,2 +1,4 @@
 # ConsoleEngine
-C teaching project. 
+C teaching project.
+
+Windows command minimalist 2d graphic engine
