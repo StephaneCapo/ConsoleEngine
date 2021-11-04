@@ -106,6 +106,21 @@ int WasKeyReleased(DVector* inputList, int key)
     return 0;
 }
 
+int WasAnyKeyReleased(DVector* inputList)
+{
+    
+    unsigned int  KeyCount = DVectorSize(inputList);
+    for (unsigned int i = 0; i < KeyCount; i++)
+    {
+        int keyState = DVectorGetTyped(inputList, int, i);
+        if (keyState & WAS_RELEASED_BIT)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 // return 1 if given key was just pressed
 // else return 0
 int KeyPressStart(DVector* inputList, int key)
