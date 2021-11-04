@@ -12,7 +12,13 @@ extern "C"
 
 	typedef struct DisplaySettings DisplaySettings;
 
-#define ENCODE_DISPLAY_CHARACTER(fg,bg,character,charflag) {\
+#define ENCODE_DISPLAY_CHARACTER(fg,bg,character,charflag) (DisplayCharacter){\
+ ((unsigned short)((((unsigned short)fg&0xFF0)>>4)|(((unsigned short)bg&0xFF0)<<4)))\
+,(unsigned short)character\
+,((unsigned char)(((unsigned short)fg&0xF)|(((unsigned short)bg&0xF)<<4)))\
+,(unsigned char)charflag}
+
+#define INIT_DISPLAY_CHARACTER(fg,bg,character,charflag) {\
  ((unsigned short)((((unsigned short)fg&0xFF0)>>4)|(((unsigned short)bg&0xFF0)<<4)))\
 ,(unsigned short)character\
 ,((unsigned char)(((unsigned short)fg&0xF)|(((unsigned short)bg&0xF)<<4)))\
