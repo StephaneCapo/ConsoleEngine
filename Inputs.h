@@ -11,6 +11,14 @@ void	RetrieveKeyboardInputs(DVector* inputList);
 // Close input management
 void	CloseInputs(DVector* inputList);
 
-// return 1 if given key is pressed
+// return 1 if given key is press
 // else return 0
-int IsKeyPressed(DVector* inputList, int key);
+int IsKeyPress(DVector* inputList, int key);
+
+// return 1 if given key was just released
+// else return 0
+int WasKeyReleased(DVector* inputList, int key);
+
+// return 1 if given key was just pressed
+// else return 0
+int KeyPressStart(DVector* inputList, int key);
