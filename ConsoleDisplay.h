@@ -53,14 +53,15 @@ extern "C"
 		BRIGHT_MAGENTA,
 		BRIGHT_CYAN,
 		BRIGHT_WHITE,			//15
-		BACKGROUND = 16,		// use previous background 
-		FOREGROUND = 32,		// use previous foreground
-		OR_COLOR = 64,		// Logical OR ( must have BACKGROUND or FOREGROUND set and a color ) 
-		AND_COLOR = 128,		// Logical AND ( must have BACKGROUND or FOREGROUND set  and a color ) 
-		XOR_COLOR = 64 | 128,	// Logical exclusive OR ( must have BACKGROUND or FOREGROUND set  and a color ) 
-		DARKER = 256,		// take resulting color and make it darker
-		CLEARER = 512,		// take resulting color and make it clearer
-		NO_BLEND = 1024,		// just copy input to output		
+		BACKGROUND	= 16,		// use previous background 
+		FOREGROUND	= 32,		// use previous foreground
+		OR_COLOR	= 64,		// Logical OR ( must have BACKGROUND or FOREGROUND set and a color ) 
+		AND_COLOR	= 128,		// Logical AND ( must have BACKGROUND or FOREGROUND set  and a color ) 
+		XOR_COLOR	= 64 | 128,	// Logical exclusive OR ( must have BACKGROUND or FOREGROUND set  and a color ) 
+		DARKER		= 256,		// take resulting color and make it darker
+		CLEARER		= 512,		// take resulting color and make it clearer
+		HALF		= 1024,		// with DARKER: only DARK Bright colors, with CLEARER: only CLEAR not bright colors
+		NO_BLEND	= 2048,		// just copy input to output		
 	}ConsoleColors;
 
 	void	CodeColors(DisplayCharacter* color, ConsoleColors FG, ConsoleColors BG);

@@ -54,8 +54,8 @@ void HideCursor(DisplaySettings* settings)  // Hide the cursor
 
 const int DARKERCOLORS[16] = {	BLACK,
 								BLACK,
-								BLUE,
-								GREEN,
+								BLACK,
+								BLACK,
 								BLACK,
 								RED,
 								BLUE,
@@ -79,12 +79,12 @@ const int CLEARERCOLORS[16] = { BRIGHT_BLACK,
 								BRIGHT_CYAN,
 								BRIGHT_WHITE,
 								WHITE,
-								MAGENTA,
-								CYAN,
-								BRIGHT_WHITE,
+								BRIGHT_RED,
 								BRIGHT_CYAN,
 								BRIGHT_WHITE,
-								BRIGHT_WHITE,
+								BRIGHT_CYAN,
+								BRIGHT_RED,
+								BRIGHT_YELLOW,
 								BRIGHT_WHITE
 };
 
@@ -171,11 +171,17 @@ void	ManageColorFlags(unsigned int sourceColor, unsigned int* finalColor, unsign
 
 	if (sourceColor & DARKER)
 	{
-		*finalColor = DARKERCOLORS[(*finalColor) & 15];
+		if (((sourceColor & HALF) && ((*finalColor) & 15) >= 8) || !(sourceColor & HALF))
+		{
+			*finalColor = DARKERCOLORS[(*finalColor) & 15];
+		}
 	}
 	if (sourceColor & CLEARER)
 	{
-		*finalColor = CLEARERCOLORS[(*finalColor) & 15];
+		if (((sourceColor & HALF) && ((*finalColor) & 15) < 8) || !(sourceColor & HALF))
+		{
+			*finalColor = CLEARERCOLORS[(*finalColor) & 15];
+		}
 	}
 }
 
