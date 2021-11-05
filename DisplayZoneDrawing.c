@@ -190,6 +190,13 @@ rgbVect	getRGBDirection(rgbVect start, rgbVect end)
 	return result;
 }
 
+void	RGBSet(rgbVect* c, int v)
+{
+	c->R *= v;
+	c->G *= v;
+	c->B *= v;
+}
+
 void RGBMult(rgbVect* c, float f)
 {
 	c->R *= f;
@@ -320,6 +327,17 @@ unsigned int	getOrientedNearestConsoleColor(rgbVect input,unsigned int nearestIn
 	return bestIndex;
 }
 
+int MixColors(int col1, int col2)
+{
+	rgbVect mixed1 = RGB_ConsoleColors[col1];
+	rgbVect mixed2 = RGB_ConsoleColors[col2];
+
+	RGBAdd(&mixed1, &mixed2);
+	RGBIntDiv(&mixed1, 2);
+
+	return getNearestConsoleColor(mixed1);
+}
+
 // 4 pixels : 
 // 
 // 0 1
@@ -327,7 +345,7 @@ unsigned int	getOrientedNearestConsoleColor(rgbVect input,unsigned int nearestIn
 
 unsigned char blendRamp[4] = { ' ',176,177,178 };
 
-DisplayCharacter	GetDisplayCharacterFrom4Pixels(RGBPixel* FourPixels)
+DisplayCharacter	GetDisplayCharacterFrom4Pixels(RGBAPixel* FourPixels)
 {
 	rgbVect inputs[4];
 
@@ -336,23 +354,56 @@ DisplayCharacter	GetDisplayCharacterFrom4Pixels(RGBPixel* FourPixels)
 		inputs[i]= getRGBFromValues(FourPixels[i].R, FourPixels[i].G, FourPixels[i].B);
 	}
 
-	rgbVect	moyennes[4];
+	rgbVect			moyennes[4];
+	unsigned int	moyenneAlpha[4];
 	// moyenne 0,1
-	moyennes[0] = inputs[0];
-	RGBAdd(&(moyennes[0]),&inputs[1]);
-	RGBIntDiv(&(moyennes[0]), 2);
+	moyenneAlpha[0] = (FourPixels[0].A + FourPixels[1].A)/2;
+	if (moyenneAlpha[0] < 86) // full transparent
+	{
+		 RGBSet(&moyennes[0],0);
+	}
+	else
+	{
+		moyennes[0] = inputs[0];
+		RGBAdd(&(moyennes[0]), &inputs[1]);
+		RGBIntDiv(&(moyennes[0]), 2);
+	}
 	// moyenne 2,3
-	moyennes[1] = inputs[2];
-	RGBAdd(&(moyennes[1]), &inputs[3]);
-	RGBIntDiv(&(moyennes[1]), 2);
+	moyenneAlpha[1] = (FourPixels[2].A + FourPixels[3].A) / 2;
+	if (moyenneAlpha[1] < 86) // full transparent
+	{
+		RGBSet(&moyennes[1], 0);
+	}
+	else
+	{
+		moyennes[1] = inputs[2];
+		RGBAdd(&(moyennes[1]), &inputs[3]);
+		RGBIntDiv(&(moyennes[1]), 2);
+	}
 	// moyenne 0,2
-	moyennes[2] = inputs[0];
-	RGBAdd(&(moyennes[2]), &inputs[2]);
-	RGBIntDiv(&(moyennes[2]), 2);
+	moyenneAlpha[2] = (FourPixels[0].A + FourPixels[2].A) / 2;
+	if (moyenneAlpha[2] < 86) // full transparent
+	{
+		RGBSet(&moyennes[2], 0);
+	}
+	else
+	{
+		moyennes[2] = inputs[0];
+		RGBAdd(&(moyennes[2]), &inputs[2]);
+		RGBIntDiv(&(moyennes[2]), 2);
+	}
 	// moyenne 1,3
-	moyennes[3] = inputs[1];
-	RGBAdd(&(moyennes[3]), &inputs[3]);
-	RGBIntDiv(&(moyennes[3]), 2);
+	moyenneAlpha[3] = (FourPixels[1].A + FourPixels[3].A) / 2;
+	if (moyenneAlpha[3] < 86) // full transparent
+	{
+		RGBSet(&moyennes[3], 0);
+	}
+	else
+	{
+		moyennes[3] = inputs[1];
+		RGBAdd(&(moyennes[3]), &inputs[3]);
+		RGBIntDiv(&(moyennes[3]), 2);
+	}
 
 	rgbVect	diffs[2];
 	unsigned int sqrnorm[2];
@@ -376,13 +427,45 @@ DisplayCharacter	GetDisplayCharacterFrom4Pixels(RGBPixel* FourPixels)
 		if (maxNorm == 0)
 		{
 			unsigned int up = getNearestConsoleColor(moyennes[0]);
+			if (moyenneAlpha[0]<86)
+			{
+				up = FOREGROUND;
+			}
+			else if (moyenneAlpha[0] < 172)
+			{
+				up |= FOREGROUND | MIX;
+			}
 			unsigned int down = getNearestConsoleColor(moyennes[1]);
+			if (moyenneAlpha[1] < 86)
+			{
+				down = BACKGROUND;
+			}
+			else if (moyenneAlpha[1] < 172)
+			{
+				down |= BACKGROUND | MIX;
+			}
 			result=ENCODE_DISPLAY_CHARACTER(up, down, 223, 0);
 		}
 		else
 		{
 			unsigned int left = getNearestConsoleColor(moyennes[2]);
+			if (moyenneAlpha[2] < 86)
+			{
+				left = FOREGROUND;
+			}
+			else if (moyenneAlpha[2] < 172)
+			{
+				left |= FOREGROUND | MIX;
+			}
 			unsigned int right = getNearestConsoleColor(moyennes[3]);
+			if (moyenneAlpha[3] < 86)
+			{
+				right = BACKGROUND;
+			}
+			else if (moyenneAlpha[3] < 172)
+			{
+				right |= BACKGROUND | MIX;
+			}
 			result = ENCODE_DISPLAY_CHARACTER(left, right, 221, 0);
 		}
 	}
@@ -394,28 +477,49 @@ DisplayCharacter	GetDisplayCharacterFrom4Pixels(RGBPixel* FourPixels)
 		RGBAdd(&(moyennes[0]), &inputs[3]);
 		RGBIntDiv(&(moyennes[0]), 4);
 
-		unsigned int nearest = getNearestConsoleColor(moyennes[0]);
-		unsigned int opposite = getOrientedNearestConsoleColor(moyennes[0], nearest);
+		moyenneAlpha[0] = (FourPixels[0].A + FourPixels[1].A + FourPixels[2].A + FourPixels[3].A) / 4;
 
-		if (opposite != 16)
+		if (moyenneAlpha[0] < 86)
 		{
-			rgbVect	v1 = getRGBDirection(RGB_ConsoleColors[nearest], RGB_ConsoleColors[opposite]);
-			rgbVect	v2 = getRGBDirection(RGB_ConsoleColors[nearest], moyennes[0]);
-
-			int	dot = 65536 * getRGBDot(v1, v2);
-			dot /= getRGBSquaredNorm(v1);
-
-			// dot is in [0,0.5]
-
-			int blendIndex = (3 * dot) / 32768;
-
-			DisplayCharacter blend = ENCODE_DISPLAY_CHARACTER(opposite, nearest, blendRamp[blendIndex], 0);
-			result = blend;
+			result = ENCODE_DISPLAY_CHARACTER(FOREGROUND, BACKGROUND, ' ', NO_CHARACTER);
 		}
 		else
 		{
-			DisplayCharacter blend = ENCODE_DISPLAY_CHARACTER(BLACK, nearest, ' ', 0);
-			result = blend;
+			unsigned int nearest = getNearestConsoleColor(moyennes[0]);
+			unsigned int opposite = getOrientedNearestConsoleColor(moyennes[0], nearest);
+
+			if (opposite != 16)
+			{
+				rgbVect	v1 = getRGBDirection(RGB_ConsoleColors[nearest], RGB_ConsoleColors[opposite]);
+				rgbVect	v2 = getRGBDirection(RGB_ConsoleColors[nearest], moyennes[0]);
+
+				int	dot = 65536 * getRGBDot(v1, v2);
+				dot /= getRGBSquaredNorm(v1);
+
+				// dot is in [0,0.5]
+
+				int blendIndex = (3 * dot) / 32768;
+
+				if (moyenneAlpha[0] < 172)
+				{
+					result = ENCODE_DISPLAY_CHARACTER(FOREGROUND| MIX |opposite, BACKGROUND | MIX | nearest, blendRamp[blendIndex], 0);
+				}
+				else
+				{
+					result = ENCODE_DISPLAY_CHARACTER(opposite, nearest, blendRamp[blendIndex], 0);
+				}
+			}
+			else
+			{
+				if (moyenneAlpha[0] < 172)
+				{
+					result = ENCODE_DISPLAY_CHARACTER(FOREGROUND, BACKGROUND | MIX | nearest, ' ', NO_CHARACTER);
+				}
+				else
+				{
+					result = ENCODE_DISPLAY_CHARACTER(BLACK, nearest, ' ', 0);
+				}
+			}
 		}
 
 	}
@@ -630,12 +734,12 @@ DisplayZone* CreateDisplayZoneFromBMP(const char* bmpname)
 	{
 		for (int i = 0; i < imgSizeX; i += 2)
 		{
-			RGBPixel pixel[4];
+			RGBAPixel pixel[4];
 
-			pixel[0] = getBitmapRGB(BitmapInfo, bmpdata, i, j);
-			pixel[1] = getBitmapRGB(BitmapInfo, bmpdata, i + 1, j);
-			pixel[2] = getBitmapRGB(BitmapInfo, bmpdata, i, j + 1);
-			pixel[3] = getBitmapRGB(BitmapInfo, bmpdata, i + 1, j + 1);
+			pixel[0] = getBitmapRGBA(BitmapInfo, bmpdata, i, j);
+			pixel[1] = getBitmapRGBA(BitmapInfo, bmpdata, i + 1, j);
+			pixel[2] = getBitmapRGBA(BitmapInfo, bmpdata, i, j + 1);
+			pixel[3] = getBitmapRGBA(BitmapInfo, bmpdata, i + 1, j + 1);
 
 			DisplayCharacter color = GetDisplayCharacterFrom4Pixels(pixel);
 			PrintDisplayCharacterInDisplayZone(resultZone, color, i / 2, j / 2);

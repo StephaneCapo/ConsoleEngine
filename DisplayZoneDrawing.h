@@ -15,6 +15,10 @@ extern "C"
 
 	}rgbVect;
 
+
+	// return the nearest color from the average of the two given colors
+	int MixColors(int col1, int col2);
+
 	// some utility functions to draw geometry in Display Zone
 
 	// draw a filled rectangle with given pos, size, colors and character
@@ -41,7 +45,7 @@ extern "C"
 	// convert RGB values to DisplayCharacter and return "error"
 	DisplayCharacter	GetAsciiArtFromRGBExt(unsigned char R, unsigned char G, unsigned char B,rgbVect* error);
 
-	DisplayCharacter	GetDisplayCharacterFrom4Pixels(RGBPixel* FourPixels);
+	DisplayCharacter	GetDisplayCharacterFrom4Pixels(RGBAPixel* FourPixels);
 
 	void	convertImageWithDithering(BITMAPINFO* BitmapInfo, unsigned char* bmpdata, DisplayZone* zone);
 
