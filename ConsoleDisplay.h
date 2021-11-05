@@ -67,7 +67,8 @@ extern "C"
 		DARKER		= 256,		// take resulting color and make it darker
 		CLEARER		= 512,		// take resulting color and make it clearer
 		HALF		= 1024,		// with DARKER: only DARK Bright colors, with CLEARER: only CLEAR not bright colors
-		NO_BLEND	= 2048,		// just copy input to output		
+		MIX			= 2048,		// blend BACKGROUND or FOREGROUND and the color
+		NO_BLEND	= 4096,		// just copy input to output		
 	}ConsoleColors;
 
 	void	CodeColors(DisplayCharacter* color, ConsoleColors FG, ConsoleColors BG);

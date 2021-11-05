@@ -85,6 +85,8 @@ const int CLEARERCOLORS[16] = { BRIGHT_BLACK,
 								BRIGHT_WHITE
 };
 
+int MIXED_COLORS[256];
+
 void EnableVirtualTerminal(DisplaySettings* display)
 {
 	DWORD consoleMode;
@@ -164,6 +166,11 @@ void	ManageColorFlags(unsigned int sourceColor, unsigned int* finalColor, unsign
 	else if (sourceColor & XOR_COLOR)
 	{
 		*finalColor = (*secondColor) ^ (sourceColor & 0xF);
+	}
+
+	if (sourceColor & MIX)
+	{
+		*finalColor = MIXED_COLORS[(((*secondColor)&0xF)<<4) | (sourceColor & 0xF)];
 	}
 
 	if (sourceColor & DARKER)
@@ -275,6 +282,13 @@ extern void initRGBConsoleColor();
 DisplaySettings* InitDisplay(unsigned int sx, unsigned int sy,unsigned int newFontW,unsigned int squaredRasterFont)
 {
 	initRGBConsoleColor();
+
+	for (int i = 0; i < 256; i++)
+	{
+		MIXED_COLORS[i]= MixColors((i & 0xF0)>>4,(i&0xF));
+	}
+
+
 	DisplaySettings* result =(DisplaySettings*) malloc(sizeof(DisplaySettings));
 	result->mDisplayFPS = 0;
 	result->mConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
