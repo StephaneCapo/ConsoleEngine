@@ -197,6 +197,50 @@ void RGBMult(rgbVect* c, float f)
 	c->B *= f;
 }
 
+void RGBIntDiv(rgbVect* c, int d)
+{
+	c->R /= d;
+	c->G /= d;
+	c->B /= d;
+}
+
+void RGBIntMult(rgbVect* c, int m)
+{
+	c->R *= m;
+	c->G *= m;
+	c->B *= m;
+}
+
+// add v2 to v1
+void RGBAdd(rgbVect* v1, rgbVect* v2)
+{
+	v1->R += v2->R;
+	v1->G += v2->G;
+	v1->B += v2->B;
+}
+
+// sub v2 from v1
+void RGBSub(rgbVect* v1, rgbVect* v2)
+{
+	v1->R -= v2->R;
+	v1->G -= v2->G;
+	v1->B -= v2->B;
+}
+
+void RGBNeg(rgbVect* v1)
+{
+	v1->R = -v1->R;
+	v1->G = -v1->G;
+	v1->B = -v1->B;
+}
+
+void RGBABS(rgbVect* v1)
+{
+	v1->R = (v1->R < 0) ? (-v1->R) : v1->R;
+	v1->G = (v1->G < 0) ? (-v1->G) : v1->G;
+	v1->B = (v1->B < 0) ? (-v1->B) : v1->B;
+}
+
 unsigned int	getRGBSquaredNorm(rgbVect c)
 {
 	return c.R * c.R + c.G * c.G + c.B * c.B;
@@ -276,6 +320,108 @@ unsigned int	getOrientedNearestConsoleColor(rgbVect input,unsigned int nearestIn
 	return bestIndex;
 }
 
+// 4 pixels : 
+// 
+// 0 1
+// 2 3
+
+unsigned char blendRamp[4] = { ' ',176,177,178 };
+
+DisplayCharacter	GetDisplayCharacterFrom4Pixels(RGBPixel* FourPixels)
+{
+	rgbVect inputs[4];
+
+	for (int i = 0; i < 4; i++)
+	{
+		inputs[i]= getRGBFromValues(FourPixels[i].R, FourPixels[i].G, FourPixels[i].B);
+	}
+
+	rgbVect	moyennes[4];
+	// moyenne 0,1
+	moyennes[0] = inputs[0];
+	RGBAdd(&(moyennes[0]),&inputs[1]);
+	RGBIntDiv(&(moyennes[0]), 2);
+	// moyenne 2,3
+	moyennes[1] = inputs[2];
+	RGBAdd(&(moyennes[1]), &inputs[3]);
+	RGBIntDiv(&(moyennes[1]), 2);
+	// moyenne 0,2
+	moyennes[2] = inputs[0];
+	RGBAdd(&(moyennes[2]), &inputs[2]);
+	RGBIntDiv(&(moyennes[2]), 2);
+	// moyenne 1,3
+	moyennes[3] = inputs[1];
+	RGBAdd(&(moyennes[3]), &inputs[3]);
+	RGBIntDiv(&(moyennes[3]), 2);
+
+	rgbVect	diffs[2];
+	unsigned int sqrnorm[2];
+	diffs[0] = moyennes[0];
+	RGBSub(&diffs[0],&moyennes[1]);
+	sqrnorm[0] = getRGBSquaredNorm(diffs[0]);
+	unsigned int maxNorm = 0;
+
+	diffs[1] = moyennes[2];
+	RGBSub(&diffs[1], &moyennes[3]);
+	sqrnorm[1] = getRGBSquaredNorm(diffs[1]);
+	if (sqrnorm[1] > sqrnorm[0])
+	{
+		maxNorm = 1;
+	}
+	
+	DisplayCharacter result;
+	// if high contrast 
+	if (sqrnorm[maxNorm] > 8192)
+	{
+		if (maxNorm == 0)
+		{
+			unsigned int up = getNearestConsoleColor(moyennes[0]);
+			unsigned int down = getNearestConsoleColor(moyennes[1]);
+			result=ENCODE_DISPLAY_CHARACTER(up, down, 223, 0);
+		}
+		else
+		{
+			unsigned int left = getNearestConsoleColor(moyennes[2]);
+			unsigned int right = getNearestConsoleColor(moyennes[3]);
+			result = ENCODE_DISPLAY_CHARACTER(left, right, 221, 0);
+		}
+	}
+	else
+	{
+		moyennes[0] = inputs[0];
+		RGBAdd(&(moyennes[0]), &inputs[1]);
+		RGBAdd(&(moyennes[0]), &inputs[2]);
+		RGBAdd(&(moyennes[0]), &inputs[3]);
+		RGBIntDiv(&(moyennes[0]), 4);
+
+		unsigned int nearest = getNearestConsoleColor(moyennes[0]);
+		unsigned int opposite = getOrientedNearestConsoleColor(moyennes[0], nearest);
+
+		if (opposite != 16)
+		{
+			rgbVect	v1 = getRGBDirection(RGB_ConsoleColors[nearest], RGB_ConsoleColors[opposite]);
+			rgbVect	v2 = getRGBDirection(RGB_ConsoleColors[nearest], moyennes[0]);
+
+			int	dot = 65536 * getRGBDot(v1, v2);
+			dot /= getRGBSquaredNorm(v1);
+
+			// dot is in [0,0.5]
+
+			int blendIndex = (3 * dot) / 32768;
+
+			DisplayCharacter blend = ENCODE_DISPLAY_CHARACTER(opposite, nearest, blendRamp[blendIndex], 0);
+			result = blend;
+		}
+		else
+		{
+			DisplayCharacter blend = ENCODE_DISPLAY_CHARACTER(BLACK, nearest, ' ', 0);
+			result = blend;
+		}
+
+	}
+
+	return result;
+}
 
 DisplayCharacter	GetAsciiArtFromRGB(unsigned char R, unsigned char G, unsigned char B)
 {
@@ -461,4 +607,42 @@ void	convertImageWithDithering(BITMAPINFO* BitmapInfo, unsigned char* bmpdata, D
 	convertBufferWithDithering(buffer, zoneX, zoneY, zone);
 
 	free(buffer);
+}
+
+// no dithering, only block or blend done with pixel grid for sprites
+DisplayZone* CreateDisplayZoneFromBMP(const char* bmpname)
+{
+	BITMAPINFO* BitmapInfo = NULL;
+	unsigned char* bmpdata = LoadDIBitmap(bmpname, &BitmapInfo);
+	if ((!BitmapInfo) || (!bmpdata))
+	{
+		// error
+		return NULL;
+	}
+
+	int imgSizeX = BitmapInfo->bmiHeader.biWidth;
+	int imgSizeY = BitmapInfo->bmiHeader.biHeight;
+
+	DisplayZone*	resultZone =(DisplayZone *) malloc(sizeof(DisplayZone));
+	InitDisplayZone(resultZone, 0, 0, imgSizeX / 2, imgSizeY / 2, 1);
+
+	for (int j = 0; j < imgSizeY; j += 2)
+	{
+		for (int i = 0; i < imgSizeX; i += 2)
+		{
+			RGBPixel pixel[4];
+
+			pixel[0] = getBitmapRGB(BitmapInfo, bmpdata, i, j);
+			pixel[1] = getBitmapRGB(BitmapInfo, bmpdata, i + 1, j);
+			pixel[2] = getBitmapRGB(BitmapInfo, bmpdata, i, j + 1);
+			pixel[3] = getBitmapRGB(BitmapInfo, bmpdata, i + 1, j + 1);
+
+			DisplayCharacter color = GetDisplayCharacterFrom4Pixels(pixel);
+			PrintDisplayCharacterInDisplayZone(resultZone, color, i / 2, j / 2);
+		}
+	}
+	free(BitmapInfo);
+	free(bmpdata);
+
+	return resultZone;
 }

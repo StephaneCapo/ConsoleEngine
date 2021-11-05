@@ -41,9 +41,13 @@ extern "C"
 	// convert RGB values to DisplayCharacter and return "error"
 	DisplayCharacter	GetAsciiArtFromRGBExt(unsigned char R, unsigned char G, unsigned char B,rgbVect* error);
 
+	DisplayCharacter	GetDisplayCharacterFrom4Pixels(RGBPixel* FourPixels);
+
 	void	convertImageWithDithering(BITMAPINFO* BitmapInfo, unsigned char* bmpdata, DisplayZone* zone);
 
 	void	convertBufferWithDithering(RGBPixel* buffer, int imgSizeX, int imgSizeY, DisplayZone* zone);
+
+	DisplayZone* CreateDisplayZoneFromBMP(const char* bmpname);
 
 #ifdef __cplusplus
 } // extern C
