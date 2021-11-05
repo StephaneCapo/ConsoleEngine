@@ -121,6 +121,9 @@ extern "C"
 	// clear the current display buffer
 	void	ClearBuffer(DisplaySettings* settings, ConsoleColors FG, ConsoleColors BG);
 
+	// if show == 0 don't display FPS else display FPS
+	void	ShowFPS(DisplaySettings* settings, int show);
+
 #ifdef __cplusplus
 }// extern C
 #endif
