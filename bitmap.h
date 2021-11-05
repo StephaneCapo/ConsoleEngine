@@ -103,11 +103,19 @@ extern "C" {
 		unsigned char B;
 	}RGBPixel;
 
+	typedef struct RGBAPixel
+	{
+		unsigned char R;
+		unsigned char G;
+		unsigned char B;
+		unsigned char A;
+	}RGBAPixel;
 
 	RGBPixel	BlendPixel(RGBPixel p1, RGBPixel p2, unsigned char blendFactor);
 
 
 	extern RGBPixel getBitmapRGB(BITMAPINFO* info, unsigned char* data, int px, int py);
+	extern RGBAPixel getBitmapRGBA(BITMAPINFO* info, unsigned char* data, int px, int py);
 
 	extern int     SaveDIBitmap(const char *filename, BITMAPINFO *info,
 		unsigned char *bits);

@@ -79,6 +79,58 @@ RGBPixel getBitmapRGB(BITMAPINFO* info,unsigned char* data, int px, int py)
 	return result;
 }
 
+RGBAPixel getBitmapRGBA(BITMAPINFO* info, unsigned char* data, int px, int py)
+{
+	RGBAPixel result = { 0,0,0,0xFF };
+
+	py = info->bmiHeader.biHeight - 1 - py;
+
+	if ((px >= 0) && (px < info->bmiHeader.biWidth) && (py >= 0) && (py < info->bmiHeader.biHeight))
+	{
+		if ((info->bmiColors) && (info->bmiHeader.biBitCount == 8))
+		{
+			int lineSize = (info->bmiHeader.biWidth - 1) / 4;
+			lineSize = (lineSize + 1) * 4;
+
+			unsigned char paletteIndex = data[lineSize * py + px];
+			unsigned char* pixel = (unsigned char*)&(info->bmiColors[paletteIndex]);
+			result.R = pixel[2];
+			result.G = pixel[1];
+			result.B = pixel[0];
+			result.A = pixel[3];
+		}
+		else if (info->bmiHeader.biBitCount == 8) // no palette but grayscale ?
+		{
+			int lineSize = (info->bmiHeader.biWidth - 1) / 4;
+			lineSize = (lineSize + 1) * 4;
+			unsigned char* pixel = (unsigned char*)&data[lineSize * py + px];
+			result.R = pixel[0];
+			result.G = pixel[0];
+			result.B = pixel[0];
+		}
+		else if (info->bmiHeader.biBitCount == 24)
+		{
+			int lineSize = (3 * info->bmiHeader.biWidth - 1) / 4;
+			lineSize = (lineSize + 1) * 4;
+
+			unsigned char* pixel = (unsigned char*)&data[lineSize * py + 3 * px];
+			result.R = pixel[2];
+			result.G = pixel[1];
+			result.B = pixel[0];
+		}
+		else if (info->bmiHeader.biBitCount == 32)
+		{
+			unsigned char* pixel = (unsigned char*)&data[4 * (info->bmiHeader.biWidth * py + px)];
+			result.R = pixel[2];
+			result.G = pixel[1];
+			result.B = pixel[0];
+			result.A = pixel[3];
+		}
+	}
+	return result;
+}
+
+
 unsigned char* LoadBMPImage(const char* filename, int* sx, int* sy)
 {
 	unsigned char* loadedData;
