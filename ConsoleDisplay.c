@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <WinCon.h>
 #include "TimeManagement.h"
+#include "DisplayZoneDrawing.h"
 
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 

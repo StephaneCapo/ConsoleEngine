@@ -4,12 +4,14 @@
 #define ABS_INT(a) ((a<0)?(-(a)):(a))
 
 
-unsigned char	greyRamp[] = " .:-=+*#@";
-unsigned int	RGB_ConsoleColorsValues[16] = { 0x0C0C0C,0xC50F1F,0x13A1E0,0xC19C00,0x0037DA,0x881798,0x3A96DD,0xCCCCCC,
+unsigned char	greyRamp[] = " .:-=+*#";
+unsigned int	RGB_ConsoleColorsValues[16] = { 0x0C0C0C,0xC50F1F,0x13A10E,0xC19C00,0x0037DA,0x881798,0x3A96DD,0xCCCCCC,
 												0x767676,0xE74856,0x16C60C,0xF9F1A5,0x3B78FF,0xB4009E,0x61D6D6,0xF2F2F2 };
 
 
+
 rgbVect	RGB_ConsoleColors[16];
+rgbVect RGB_LABConsoleColors[16];
 
 extern void	Blender(DisplayCharacter* src, DisplayCharacter* dst, DisplayCharacter* blender);
 
@@ -165,13 +167,7 @@ rgbVect getRGBFromConsoleIndex(unsigned int index)
 	result.B = (int)(RGB_ConsoleColorsValues[index] & 0xFF);
 	return result;
 }
-void initRGBConsoleColor()
-{
-	for (int i = 0; i < 16; i++)
-	{
-		RGB_ConsoleColors[i] = getRGBFromConsoleIndex(i);
-	}
-}
+
 rgbVect getRGBFromValues(unsigned char R, unsigned char G, unsigned char B)
 {
 	rgbVect	result;
@@ -192,9 +188,24 @@ rgbVect	getRGBDirection(rgbVect start, rgbVect end)
 
 void	RGBSet(rgbVect* c, int v)
 {
-	c->R *= v;
-	c->G *= v;
-	c->B *= v;
+	c->R = v;
+	c->G = v;
+	c->B = v;
+}
+
+void	RGBMin(rgbVect* v1, rgbVect* v2)
+{
+	v1->R = (v1->R > v2->R) ? v2->R : v1->R;
+	v1->G = (v1->G > v2->G) ? v2->G : v1->G;
+	v1->B = (v1->B > v2->B) ? v2->B : v1->B;
+}
+
+
+void	RGBMax(rgbVect* v1, rgbVect* v2)
+{
+	v1->R = (v1->R < v2->R) ? v2->R : v1->R;
+	v1->G = (v1->G < v2->G) ? v2->G : v1->G;
+	v1->B = (v1->B < v2->B) ? v2->B : v1->B;
 }
 
 void RGBMult(rgbVect* c, float f)
@@ -257,8 +268,156 @@ int	getRGBDot(rgbVect c1,rgbVect c2)
 {
 	return c1.R * c2.R + c1.G * c2.G + c1.B * c2.B;
 }
+void	clamp_0_255(int* toClamp)
+{
+	if (*toClamp < 0)
+	{
+		*toClamp = 0;
+	}
+	else if (*toClamp > 255)
+	{
+		*toClamp = 255;
+	}
+}
 
-// 3D distance, don't take visual distance into account
+void	clamp(int* toClamp,int min,int max)
+{
+	if (*toClamp < min)
+	{
+		*toClamp = min;
+	}
+	else if (*toClamp > max)
+	{
+		*toClamp = max;
+	}
+}
+
+void RGBClamp(rgbVect* toclamp)
+{
+	clamp_0_255(&(toclamp->R));
+	clamp_0_255(&(toclamp->G));
+	clamp_0_255(&(toclamp->B));
+}
+
+void LABClamp(rgbVect* toclamp)
+{
+	clamp(&(toclamp->R),0,100);
+	clamp(&(toclamp->G),-86,98);
+	clamp(&(toclamp->B),-107,94);
+}
+
+// the following functions are based off of the pseudocode
+// found on www.easyrgb.com
+
+rgbVect lab2rgb(rgbVect lab)
+{
+
+	float y = (lab.R + 16) / 116.0;
+	float x = lab.G / 500.0 + y;
+	float z = y - lab.B / 200.0;
+
+	x = 0.95047f * ((x * x * x > 0.008856f) ? x * x * x : (x - 16.0f / 116.0f) / 7.787f);
+	y = 1.00000f * ((y * y * y > 0.008856f) ? y * y * y : (y - 16.0f / 116.0f) / 7.787f);
+	z = 1.08883f * ((z * z * z > 0.008856f) ? z * z * z : (z - 16.0f / 116.0f) / 7.787f);
+
+	rgbVect result;
+	float r = x * 3.2406f + y * -1.5372f + z * -0.4986f;
+	float g = x * -0.9689f + y * 1.8758f + z * 0.0415f;
+	float b = x * 0.0557f + y * -0.2040f + z * 1.0570f;
+
+	r = (r > 0.0031308f) ? (1.055f * powf(r, 1.0f / 2.4f) - 0.055f) : 12.92f * r;
+	g = (g > 0.0031308f) ? (1.055f * powf(g, 1.0f / 2.4f) - 0.055f) : 12.92f * g;
+	b = (b > 0.0031308f) ? (1.055f * powf(b, 1.0f / 2.4f) - 0.055f) : 12.92f * b;
+
+	result.R = r * 255.0f;
+	result.G = g * 255.0f;
+	result.B = b * 255.0f;
+
+
+	RGBClamp(&result);
+
+	return result;
+}
+
+
+rgbVect rgb2lab(rgbVect rgb) 
+{
+	float r = rgb.R / 255.0f;
+	float g = rgb.G / 255.0f;
+	float b = rgb.B / 255.0f;
+	float x, y, z;
+
+	r = (r > 0.04045f) ? powf((r + 0.055f) / 1.055f, 2.4f) : r / 12.92f;
+	g = (g > 0.04045f) ? powf((g + 0.055f) / 1.055f, 2.4f) : g / 12.92f;
+	b = (b > 0.04045f) ? powf((b + 0.055f) / 1.055f, 2.4f) : b / 12.92f;
+
+	x = (r * 0.4124f + g * 0.3576f + b * 0.1805f) / 0.95047f;
+	y = (r * 0.2126f + g * 0.7152f + b * 0.0722f) / 1.00000f;
+	z = (r * 0.0193f + g * 0.1192f + b * 0.9505f) / 1.08883f;
+
+	x = (x > 0.008856f) ? powf(x, 1.0f / 3.0f) : (7.787f * x) + 16.0f / 116.0f;
+	y = (y > 0.008856f) ? powf(y, 1.0f / 3.0f) : (7.787f * y) + 16.0f / 116.0f;
+	z = (z > 0.008856f) ? powf(z, 1.0f / 3.0f) : (7.787f * z) + 16.0f / 116.0f;
+
+	rgbVect result;
+	result.R = (116.0f * y) - 16;
+	result.G = 500.0f * (x - y);
+	result.B = 200.0 * (y - z);
+	return result;
+}
+
+// calculate the perceptual distance between colors in CIELAB
+// https://github.com/THEjoezack/ColorMine/blob/master/ColorMine/ColorSpaces/Comparisons/Cie94Comparison.cs
+
+float deltaE(rgbVect labA, rgbVect labB) 
+{
+	rgbVect delta = getRGBDirection(labB, labA);
+	
+	float c1 = sqrtf(labA.G * labA.G + labA.B * labA.B);
+	float c2 = sqrtf(labB.G * labB.G + labB.B * labB.B);
+	float deltaC = c1 - c2;
+	float deltaH = delta.G * delta.G + delta.B * delta.B - deltaC * deltaC;
+	deltaH = deltaH < 0.0f ? 0.0f : sqrtf(deltaH);
+	float sc = 1.0f + 0.045f * c1;
+	float sh = 1.0f + 0.015f * c1;
+	float deltaLKlsl = delta.R; // / (1.0);
+	float deltaCkcsc = deltaC / (sc);
+	float deltaHkhsh = deltaH / (sh);
+	float i = deltaLKlsl * deltaLKlsl + deltaCkcsc * deltaCkcsc + deltaHkhsh * deltaHkhsh;
+	return i < 0.0f ? 0.0f : sqrtf(i);
+}
+
+float squaredDeltaE(rgbVect labA, rgbVect labB)
+{
+	rgbVect delta = getRGBDirection(labB, labA);
+
+	float c1 = sqrtf(labA.G * labA.G + labA.B * labA.B);
+	float c2 = sqrtf(labB.G * labB.G + labB.B * labB.B);
+	float deltaC = c1 - c2;
+	float deltaH = delta.G * delta.G + delta.B * delta.B - deltaC * deltaC;
+	deltaH = (deltaH < 0.0f) ? 0.0f : deltaH;
+	float sc = 1.0f + 0.045f * c1;
+	float sh = 1.0f + 0.015f * c1;
+	float deltaLKlsl = delta.R; // / (1.0);
+	float deltaCkcsc = deltaC / (sc);
+	float deltaHkhsh = deltaH / (sh*sh);
+	float i = deltaLKlsl * deltaLKlsl + deltaCkcsc * deltaCkcsc + deltaHkhsh;
+	return (i < 0.0f) ? 0.0f : i;
+}
+
+
+void initRGBConsoleColor()
+{
+
+	for (int i = 0; i < 16; i++)
+	{
+		RGB_ConsoleColors[i] = getRGBFromConsoleIndex(i);
+
+		RGB_LABConsoleColors[i] = rgb2lab(RGB_ConsoleColors[i]);
+	}
+
+}
+// 3D distance
 unsigned int	getNearestConsoleColor(rgbVect input)
 {
 	unsigned int bestSquaredDist = 3*255*255;
@@ -276,6 +435,24 @@ unsigned int	getNearestConsoleColor(rgbVect input)
 	}
 	return bestIndex;
 }
+
+unsigned int	getNearestLABConsoleColor(rgbVect input)
+{
+	float bestSquaredDist = 255.0f*255.0f*3.0f;
+	unsigned int bestIndex = -1;
+	for (int i = 0; i < 16; i++)
+	{
+		float sqrdist = squaredDeltaE(RGB_LABConsoleColors[i], input);
+		
+		if (sqrdist < bestSquaredDist)
+		{
+			bestSquaredDist = sqrdist;
+			bestIndex = i;
+		}
+	}
+	return bestIndex;
+}
+
 
 // 3D oriented distance, don't take visual distance into account
 unsigned int	getOrientedNearestConsoleColor(rgbVect input,unsigned int nearestIndex)
@@ -297,7 +474,7 @@ unsigned int	getOrientedNearestConsoleColor(rgbVect input,unsigned int nearestIn
 			rgbVect colorV = getRGBDirection(input, RGB_ConsoleColors[i]);
 
 			int dot = 256*getRGBDot(colorV, direction);
-			if (dot > 0.0)
+			if (dot > 0)
 			{
 				dot /= sqrnorm;
 				rgbVect proj = direction;
@@ -327,15 +504,59 @@ unsigned int	getOrientedNearestConsoleColor(rgbVect input,unsigned int nearestIn
 	return bestIndex;
 }
 
+unsigned int	getOrientedNearestLABConsoleColor(rgbVect input, unsigned int nearestIndex)
+{
+	rgbVect direction = getRGBDirection(RGB_LABConsoleColors[nearestIndex], input);
+	unsigned int bestIndex = 16;
+
+	int sqrnorm = getRGBSquaredNorm(direction);
+	if (sqrnorm)
+	{
+		float bestSquaredDist = 10000000.0f;
+
+		for (int i = 0; i < 16; i++)
+		{
+			if (i == nearestIndex)
+				continue;
+
+			rgbVect colorV = getRGBDirection(RGB_LABConsoleColors[nearestIndex], RGB_LABConsoleColors[i]);
+			
+			int dot = 256 * getRGBDot(colorV, direction);
+			if (dot > 0)
+			{
+				int sqrnorm2 = getRGBSquaredNorm(colorV);
+				dot /= sqrnorm2;
+
+				if (dot < 256)
+				{
+					rgbVect proj = colorV;
+					RGBIntMult(&proj, dot);
+					RGBIntDiv(&proj, 256);
+					RGBAdd(&proj, &RGB_LABConsoleColors[nearestIndex]);
+
+					float dist = squaredDeltaE(proj, input);
+
+					if (dist < bestSquaredDist)
+					{
+						bestSquaredDist = dist;
+						bestIndex = i;
+					}
+				}
+			}
+		}
+	}
+	return bestIndex;
+}
+
 int MixColors(int col1, int col2)
 {
-	rgbVect mixed1 = RGB_ConsoleColors[col1];
-	rgbVect mixed2 = RGB_ConsoleColors[col2];
+	rgbVect mixed1 = RGB_LABConsoleColors[col1];
+	rgbVect mixed2 = RGB_LABConsoleColors[col2];
 
 	RGBAdd(&mixed1, &mixed2);
 	RGBIntDiv(&mixed1, 2);
 
-	return getNearestConsoleColor(mixed1);
+	return getNearestLABConsoleColor(mixed1);
 }
 
 // 4 pixels : 
@@ -545,7 +766,9 @@ DisplayCharacter	GetAsciiArtFromRGB(unsigned char R, unsigned char G, unsigned c
 
 		// dot is in [0,0.5]
 
-		int blendIndex = (9 * dot) / 32768;
+		int blendIndex = (8 * dot) / 32768;
+		if (blendIndex > 7)
+			blendIndex = 7;
 
 		DisplayCharacter blend =  ENCODE_DISPLAY_CHARACTER(opposite,nearest,greyRamp[blendIndex],0) ;
 		result = blend;
@@ -578,25 +801,16 @@ DisplayCharacter	GetAsciiArtFromRGBExt(unsigned char R, unsigned char G, unsigne
 
 		// dot is in [0,0.5]
 
-		int blendIndex = (9 * dot) / 32768;
+		int blendIndex = (8 * dot) / 32768;
+		if (blendIndex > 7)
+			blendIndex = 7;
 
 		DisplayCharacter blend = ENCODE_DISPLAY_CHARACTER(opposite, nearest, greyRamp[blendIndex], 0);
 		result = blend;
 
-		*error = v1;
-		(*error).R *= dot;
-		(*error).R /= 65536*8;
-		(*error).R *= 8;
-		(*error).G *= dot;
-		(*error).G /= 65536*8;
-		(*error).G *= 8;
-		(*error).B *= dot;
-		(*error).B /= 65536*8;
-		(*error).B *= 8;
-
-		(*error).R += RGB_ConsoleColors[nearest].R;
-		(*error).G += RGB_ConsoleColors[nearest].G;
-		(*error).B += RGB_ConsoleColors[nearest].B;
+		(*error).R = (RGB_ConsoleColors[nearest].R * (16 - blendIndex) + RGB_ConsoleColors[opposite].R * blendIndex) / 16;
+		(*error).G = (RGB_ConsoleColors[nearest].G * (16 - blendIndex) + RGB_ConsoleColors[opposite].G * blendIndex) / 16;
+		(*error).B = (RGB_ConsoleColors[nearest].B * (16 - blendIndex) + RGB_ConsoleColors[opposite].B * blendIndex) / 16;
 	}
 	else
 	{
@@ -613,27 +827,62 @@ DisplayCharacter	GetAsciiArtFromRGBExt(unsigned char R, unsigned char G, unsigne
 	return result;
 }
 
-void	clamp_0_255(int* toClamp)
+DisplayCharacter	GetAsciiArtFromLABExt(RGBPixel input, rgbVect* error)
 {
-	if (*toClamp < 0)
-	{
-		*toClamp = 0;
-	}
-	else if (*toClamp > 255)
-	{
-		*toClamp = 255;
-	}
-}
+	rgbVect RGBInput = getRGBFromValues(input.R, input.G, input.B);
+	rgbVect LABInput = rgb2lab(RGBInput);
+	unsigned int nearest = getNearestLABConsoleColor(LABInput);
+	unsigned int opposite = getOrientedNearestLABConsoleColor(LABInput, nearest);
 
-void clamp(rgbVect* toclamp)
-{
-	clamp_0_255(&(toclamp->R));
-	clamp_0_255(&(toclamp->G));
-	clamp_0_255(&(toclamp->B));
+	DisplayCharacter result;
+
+	if (opposite != 16)
+	{
+		// then compute blend in LAB
+		rgbVect	v1 = getRGBDirection(RGB_LABConsoleColors[nearest], RGB_LABConsoleColors[opposite]);
+		rgbVect	v2 = getRGBDirection(RGB_LABConsoleColors[nearest], LABInput);
+
+		int	dot = 65536 * getRGBDot(v1, v2);
+		dot /= getRGBSquaredNorm(v1);
+
+		// dot is in [0,0.5]
+
+		int blendIndex = (8 * dot) / 32768;
+		if (blendIndex > 7)
+			blendIndex = 7;
+	
+		DisplayCharacter blend = ENCODE_DISPLAY_CHARACTER(opposite, nearest, greyRamp[blendIndex], 0);
+		result = blend;
+
+		rgbVect LABBlend1 = RGB_LABConsoleColors[nearest];
+		rgbVect LABBlend2 = RGB_LABConsoleColors[opposite];
+		RGBIntMult(&LABBlend1, (16 - blendIndex));
+		RGBIntMult(&LABBlend2, blendIndex);
+		RGBAdd(&LABBlend1, &LABBlend2);
+		RGBIntDiv(&LABBlend1, 16);
+
+		(*error) = lab2rgb(LABBlend1);
+
+	}
+	else
+	{
+		DisplayCharacter blend = ENCODE_DISPLAY_CHARACTER(nearest, nearest, ' ', NO_CHARACTER);
+		result = blend;
+
+		(*error) = RGB_ConsoleColors[nearest];
+
+	}
+
+	(*error).R = RGBInput.R - (*error).R;
+	(*error).G = RGBInput.G - (*error).G;
+	(*error).B = RGBInput.B - (*error).B;
+
+	return result;
 }
 
 void	convertBufferWithDithering(RGBPixel* buffer, int imgSizeX, int imgSizeY, DisplayZone* zone)
 {
+
 	for (int j = 0; j < imgSizeY; j++)
 	{
 		int lineindex = j * imgSizeX;
@@ -641,47 +890,69 @@ void	convertBufferWithDithering(RGBPixel* buffer, int imgSizeX, int imgSizeY, Di
 		{
 
 			rgbVect	error;
-			DisplayCharacter color = GetAsciiArtFromRGBExt(buffer[i + lineindex].R, buffer[i + lineindex].G, buffer[i + lineindex].B, &error);
+			DisplayCharacter color = GetAsciiArtFromLABExt(buffer[i + lineindex], &error);
 			PrintDisplayCharacterInDisplayZone(zone, color, i, j);
 
-			// half error on right pixel, half on bottom
+			// "split" error on 4 pixels
 
-			rgbVect halferror = error;
-			halferror.R /= 2;
-			halferror.G /= 2;
-			halferror.B /= 2;
+			rgbVect splitError[4] = { error,error,error,error };
+
+			RGBIntDiv(&splitError[2],2);
+			splitError[3] = splitError[2];
+			RGBIntDiv(&splitError[3], 2);
+			splitError[1] = splitError[2];
+			RGBSub(&splitError[2], &splitError[3]);
+			RGBSub(&splitError[1], &splitError[3]);
+			RGBSub(&splitError[0], &splitError[3]);
+			RGBSub(&splitError[0], &splitError[2]);
+			RGBSub(&splitError[0], &splitError[1]);
 
 			if (i < (imgSizeX - 1))
 			{
-				rgbVect reportX = error;
-				reportX.R -= halferror.R;
-				reportX.G -= halferror.G;
-				reportX.B -= halferror.B;
+				splitError[0].R += buffer[i + lineindex + 1].R;
+				splitError[0].G += buffer[i + lineindex + 1].G;
+				splitError[0].B += buffer[i + lineindex + 1].B;
+				RGBClamp(&splitError[0]);
+				buffer[i + lineindex + 1].R = splitError[0].R;
+				buffer[i + lineindex + 1].G = splitError[0].G;
+				buffer[i + lineindex + 1].B = splitError[0].B;
 
-				reportX.R += buffer[i + lineindex + 1].R;
-				reportX.G += buffer[i + lineindex + 1].G;
-				reportX.B += buffer[i + lineindex + 1].B;
-				clamp(&reportX);
-				buffer[i + lineindex + 1].R = reportX.R;
-				buffer[i + lineindex + 1].G = reportX.G;
-				buffer[i + lineindex + 1].B = reportX.B;
+				if (j < (imgSizeY - 1))
+				{
+					splitError[1].R += buffer[i + lineindex + 1 + imgSizeX].R;
+					splitError[1].G += buffer[i + lineindex + 1 + imgSizeX].G;
+					splitError[1].B += buffer[i + lineindex + 1 + imgSizeX].B;
+					RGBClamp(&splitError[1]);
+					buffer[i + lineindex + 1 + imgSizeX].R = splitError[1].R;
+					buffer[i + lineindex + 1 + imgSizeX].G = splitError[1].G;
+					buffer[i + lineindex + 1 + imgSizeX].B = splitError[1].B;
+				}
 			}
 
 			if (j < (imgSizeY - 1))
 			{
-				rgbVect reportY = halferror;
-				reportY.R += buffer[i + lineindex + imgSizeX].R;
-				reportY.G += buffer[i + lineindex + imgSizeX].G;
-				reportY.B += buffer[i + lineindex + imgSizeX].B;
-				clamp(&reportY);
-				buffer[i + lineindex + imgSizeX].R = reportY.R;
-				buffer[i + lineindex + imgSizeX].G = reportY.G;
-				buffer[i + lineindex + imgSizeX].B = reportY.B;
+				splitError[2].R += buffer[i + lineindex + imgSizeX].R;
+				splitError[2].G += buffer[i + lineindex + imgSizeX].G;
+				splitError[2].B += buffer[i + lineindex + imgSizeX].B;
+				RGBClamp(&splitError[2]);
+				buffer[i + lineindex + imgSizeX].R = splitError[2].R;
+				buffer[i + lineindex + imgSizeX].G = splitError[2].G;
+				buffer[i + lineindex + imgSizeX].B = splitError[2].B;
+
+				if (i >= 1)
+				{
+					splitError[3].R += buffer[i + lineindex + imgSizeX - 1].R;
+					splitError[3].G += buffer[i + lineindex + imgSizeX - 1].G;
+					splitError[3].B += buffer[i + lineindex + imgSizeX - 1].B;
+					RGBClamp(&splitError[3]);
+					buffer[i + lineindex + imgSizeX - 1].R = splitError[3].R;
+					buffer[i + lineindex + imgSizeX - 1].G = splitError[3].G;
+					buffer[i + lineindex + imgSizeX - 1].B = splitError[3].B;
+				}
 			}
 		}
 	}
 }
-
 
 void	convertImageWithDithering(BITMAPINFO* BitmapInfo, unsigned char* bmpdata, DisplayZone* zone)
 {
@@ -692,6 +963,7 @@ void	convertImageWithDithering(BITMAPINFO* BitmapInfo, unsigned char* bmpdata, D
 
 	RGBPixel* buffer = (RGBPixel*)malloc(zoneX * zoneY * sizeof(RGBPixel));
 	RGBPixel* writeBuffer = buffer;
+
 	// copy bitmap in buffer
 	for (int j = 0; j < zoneY; j++)
 	{
@@ -705,6 +977,7 @@ void	convertImageWithDithering(BITMAPINFO* BitmapInfo, unsigned char* bmpdata, D
 				break;
 
 			*writeBuffer = getBitmapRGB(BitmapInfo, bmpdata, i, j);
+		
 			writeBuffer++;
 		}
 	}

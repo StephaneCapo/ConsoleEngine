@@ -49,7 +49,7 @@ extern "C"
 
 	void	convertImageWithDithering(BITMAPINFO* BitmapInfo, unsigned char* bmpdata, DisplayZone* zone);
 
-	void	convertBufferWithDithering(RGBPixel* buffer, int imgSizeX, int imgSizeY, DisplayZone* zone);
+	void	convertBufferWithDithering(RGBPixel*, int imgSizeX, int imgSizeY, DisplayZone* zone);
 
 	DisplayZone* CreateDisplayZoneFromBMP(const char* bmpname);
 
