@@ -43,7 +43,7 @@ extern "C"
 	DisplayCharacter	GetAsciiArtFromRGB(unsigned char R, unsigned char G, unsigned char B);
 
 	// convert RGB values to DisplayCharacter and return "error"
-	DisplayCharacter	GetAsciiArtFromRGBExt(unsigned char R, unsigned char G, unsigned char B,rgbVect* error);
+	DisplayCharacter	GetAsciiArtFromRGBExt(RGBPixel Input,rgbVect* error);
 
 	DisplayCharacter	GetDisplayCharacterFrom4Pixels(RGBAPixel* FourPixels);
 
