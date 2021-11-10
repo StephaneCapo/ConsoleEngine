@@ -379,7 +379,7 @@ void	PrintDisplayCharacterInDisplayZone(DisplayZone* zone, DisplayCharacter c, i
 	if (!zone->mBuffer)
 		return;
 
-	if (( px>=zone->mSizeX ) || (py >= zone->mSizeY) || (px < 0) || (py < 0) )
+	if (( (unsigned int)px>=zone->mSizeX ) || ((unsigned int)py >= zone->mSizeY) || (px < 0) || (py < 0) )
 		return;
 
 	DisplayCharacter* currentPos = zone->mBuffer + px + py * zone->mSizeX;
@@ -394,7 +394,7 @@ void	PrintInDisplayZone(DisplayZone* zone, ConsoleColors FG, ConsoleColors BG, i
 	if (!zone->mBuffer)
 		return;
 
-	if (py >= zone->mSizeY)
+	if ((unsigned int)py >= zone->mSizeY)
 		return;
 
 	DisplayCharacter* currentPos = zone->mBuffer + px + py * zone->mSizeX;
@@ -406,7 +406,7 @@ void	PrintInDisplayZone(DisplayZone* zone, ConsoleColors FG, ConsoleColors BG, i
 	while (*str)
 	{
 		putPixel.mCharacter = *str;
-		if (px >= zone->mSizeX)
+		if ((unsigned int)px >= zone->mSizeX)
 		{
 			if (gotonextline == 0)
 			{
@@ -417,13 +417,13 @@ void	PrintInDisplayZone(DisplayZone* zone, ConsoleColors FG, ConsoleColors BG, i
 				++py;
 				px = 0;
 				currentPos = zone->mBuffer + px + py * zone->mSizeX;
-				if (py >= zone->mSizeY)
+				if ((unsigned int)py >= zone->mSizeY)
 				{
 					break;
 				}
 			}
 		}
-		if ((px >= 0) && (py >= 0) && (px < zone->mSizeX) && (py < zone->mSizeY))
+		if ((px >= 0) && (py >= 0) && ((unsigned int)px < zone->mSizeX) && ((unsigned int)py < zone->mSizeY))
 		{
 			DisplayCharacter	blended;
 			Blender(&putPixel, currentPos, &blended);
@@ -446,9 +446,9 @@ void	ClearDisplayZone(DisplayZone* zone, ConsoleColors FG, ConsoleColors BG, uns
 	CodeColors(&codeColor,FG, BG);
 	codeColor.mCharacter = character;
 	codeColor.mCharactersFlag = characterFlag;
-	for (int j = 0; j < zone->mSizeY; j++)
+	for (unsigned int j = 0; j < zone->mSizeY; j++)
 	{
-		for (int i = 0; i < zone->mSizeX; i++)
+		for (unsigned int i = 0; i < zone->mSizeX; i++)
 		{
 			(*currentPos) = codeColor;
 			++currentPos;
@@ -479,22 +479,22 @@ void	CopyDisplayZonePart(DisplayZone* dest, DisplayZone* src, int px, int py, in
 	{
 		int dstPy = py + j;
 		
-		if ((dstPy >= 0) && (dstPy < dest->mSizeY))
+		if ((dstPy >= 0) && ((unsigned int)dstPy < dest->mSizeY))
 		{
 			int srcPy = srcpy + j;
-			if ((srcPy >= 0) && (srcPy < src->mSizeY))
+			if ((srcPy >= 0) && ((unsigned int)srcPy < src->mSizeY))
 			{
 				for (int i = 0; i < srcsx; i++)
 				{
 					int dstPx = px + i;
 					
-					if ((dstPx >= 0) && (dstPx < dest->mSizeX))
+					if ((dstPx >= 0) && ((unsigned int)dstPx < dest->mSizeX))
 					{
 						int srcPx = srcpx + i;
-						if ((srcPx >= 0) && (srcPx < src->mSizeX))
+						if ((srcPx >= 0) && ((unsigned int)srcPx < src->mSizeX))
 						{
-							DisplayCharacter* currentPixel = dstPixels + dstPx + dstPy * dest->mSizeX;
-							DisplayCharacter* currentZonePos = srcPixels + srcPx + srcPy * src->mSizeX;
+							DisplayCharacter* currentPixel = dstPixels + (intptr_t)(dstPx + dstPy * dest->mSizeX);
+							DisplayCharacter* currentZonePos = srcPixels + (intptr_t)(srcPx + srcPy * src->mSizeX);
 
 							DisplayCharacter blended;
 							Blender(currentZonePos, currentPixel, &blended);
@@ -526,22 +526,22 @@ void	FlushDisplayZone(DisplaySettings* settings, DisplayZone* zone)
 	
 	DisplayCharacter* displayPixel = settings->mDrawBuffer;
 
-	for (int j = 0; j < zone->mSizeY; j++)
+	for (unsigned int j = 0; j < zone->mSizeY; j++)
 	{
 		DisplayCharacter* currentLPos = zone->mBuffer + j*zone->mSizeX;
 
 		int py = j + zone->mPosY;
 	
-		if( (py >= 0) && (py<settings->mSizeY))
+		if( (py >= 0) && ((unsigned int)py<settings->mSizeY))
 		{
-			for (int i = 0; i < zone->mSizeX; i++)
+			for (unsigned int i = 0; i < zone->mSizeX; i++)
 			{
 				int px = i + zone->mPosX;
 				if ((zone->mSquaredPixels) && (!settings->mSquaredFont))
 				{
 					px *= 2;
 				}
-				if ((px >= 0) && (px < settings->mSizeX))
+				if ((px >= 0) && ((unsigned int)px < settings->mSizeX))
 				{
 					DisplayCharacter* currentPixel = displayPixel + px + py * settings->mSizeX;
 					DisplayCharacter* currentZonePos = currentLPos + i;
@@ -608,9 +608,9 @@ void	SwapBuffer(DisplaySettings* settings)
 
 	CHAR_INFO* wbuffer = buffer;
 
-	for (int j = 0; j < settings->mSizeY; j++)
+	for (unsigned int j = 0; j < settings->mSizeY; j++)
 	{
-		for (int i = 0; i < settings->mSizeX; i++)
+		for (unsigned int i = 0; i < settings->mSizeX; i++)
 		{
 			(*wbuffer).Char.UnicodeChar = frontBuffer->mCharacter;
 
@@ -645,9 +645,9 @@ void	ClearBuffer(DisplaySettings* settings, ConsoleColors FG, ConsoleColors BG)
 	CodeColors(&colorToSet,FG, BG);
 	colorToSet.mCharacter = ' ';
 	colorToSet.mCharactersFlag = NO_FLAG;
-	for (int j = 0; j < settings->mSizeY; j++)
+	for (unsigned int j = 0; j < settings->mSizeY; j++)
 	{
-		for (int i = 0; i < settings->mSizeX; i++)
+		for (unsigned int i = 0; i < settings->mSizeX; i++)
 		{
 			*drawB = colorToSet;
 			++drawB;

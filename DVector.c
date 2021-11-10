@@ -69,7 +69,7 @@ void DVectorInit(DVector* darray,unsigned int structSize, unsigned int len, void
 	{
 		char* initV = (char*)darray->mBuffer;
 
-		for (int i = 0; i < darray->mCurrentSize; i++)
+		for (unsigned int i = 0; i < darray->mCurrentSize; i++)
 		{
 			memcpy(initV, defaultVal, structSize);
 			initV += structSize;
@@ -206,7 +206,7 @@ void	DVectorResize(DVector* darray, unsigned int newLen, void* defaultVal)
 		{
 			char* initV =(char*) elemAtPos(darray,darray->mCurrentSize);
 
-			for (int i = darray->mCurrentSize; i < newLen; i++)
+			for (unsigned int i = darray->mCurrentSize; i < newLen; i++)
 			{
 				memcpy(initV, defaultVal, darray->mStructSize);
 				initV += darray->mStructSize;

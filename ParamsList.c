@@ -34,7 +34,7 @@ void GetParamElemString(ParamSection* Section, char* destString, int len, char* 
 
 ParamSection* GetSection(ParamsList* list, const char* name)
 {
-	int vsize = DVectorSize(&list->mSectionList);
+	unsigned int vsize = DVectorSize(&list->mSectionList);
 	for (unsigned int i = 0; i < vsize; i++)
 	{
 		ParamSection* section = DVectorGet(&list->mSectionList, i);
@@ -95,7 +95,7 @@ void				AddParamElem(ParamSection* section, ParamElem* elem)
 // clean all allocations
 void				ClearParamList(ParamsList* list)
 {
-	int vsize = DVectorSize(&list->mSectionList);
+	unsigned int vsize = DVectorSize(&list->mSectionList);
 	for (unsigned int i = 0; i < vsize; i++)
 	{
 		ParamSection* section = DVectorGet(&list->mSectionList, i);
@@ -145,7 +145,7 @@ int insertParamFromIni(void* user, const char* sectionname, const char* name, co
 			pf->mLink.mParamName[31] = 0;
 			// copy name
 			strncpy_s(pf->mLink.mParamName,32, name, 31);
-			sscanf_s(value, "%f", &pf->mValue,32);
+			sscanf_s(value, "%f", &pf->mValue);
 			param = (ParamElem*)pf;
 		}
 		else
@@ -155,7 +155,7 @@ int insertParamFromIni(void* user, const char* sectionname, const char* name, co
 			pi->mLink.mParamName[31] = 0;
 			// copy name
 			strncpy_s(pi->mLink.mParamName,32, name, 31);
-			sscanf_s(value, "%d", &pi->mValue,32);
+			sscanf_s(value, "%d", &pi->mValue);
 			param = (ParamElem*)pi;
 		}
 

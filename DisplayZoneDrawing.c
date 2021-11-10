@@ -38,7 +38,7 @@ void	DrawRectangleInDisplayZoneDisplayCharacter(DisplayZone* zone, int px, int p
 
 		int dstPy = py + j;
 
-		if ((dstPy >= 0) && (dstPy < zone->mSizeY))
+		if ((dstPy >= 0) && ((unsigned int)dstPy < zone->mSizeY))
 		{
 			for (int i = 0; i < sx; i++)
 			{
@@ -48,7 +48,7 @@ void	DrawRectangleInDisplayZoneDisplayCharacter(DisplayZone* zone, int px, int p
 					currentDisplay = border;
 				}
 				int dstPx = px + i;
-				if ((dstPx >= 0) && (dstPx < zone->mSizeX))
+				if ((dstPx >= 0) && ((unsigned int)dstPx < zone->mSizeX))
 				{
 					DisplayCharacter* currentPixel = dstPixels + dstPx + dstPy * zone->mSizeX;
 
@@ -113,7 +113,7 @@ void	DrawDiscInDisplayZoneDisplayCharacter(DisplayZone* zone, int cx, int cy, in
 		for (int i = -startX; i <= startX; i++)
 		{
 			int dstPx = cx + i;
-			if ((dstPx >= 0) && (dstPx < zone->mSizeX))
+			if ((dstPx >= 0) && ((unsigned int)dstPx < zone->mSizeX))
 			{
 				DisplayCharacter* currentLineDisplay = fill;
 				if (ABS_INT(i) >= lastStartX)
@@ -124,7 +124,7 @@ void	DrawDiscInDisplayZoneDisplayCharacter(DisplayZone* zone, int cx, int cy, in
 				int symLimit = (dstPy[0] == dstPy[1]) ? 1 : 2;
 				for (int sym = 0; sym < symLimit; sym++)
 				{
-					if ((dstPy[sym] >= 0) && (dstPy[sym] < zone->mSizeY))
+					if ((dstPy[sym] >= 0) && ((unsigned int)dstPy[sym] < zone->mSizeY))
 					{
 						DisplayCharacter* currentPixel = dstPixels + dstPx + dstPy[sym] * zone->mSizeX;
 						DisplayCharacter blended;
@@ -212,12 +212,6 @@ void	RGBMax(rgbVect* v1, rgbVect* v2)
 	v1->B = (v1->B < v2->B) ? v2->B : v1->B;
 }
 
-void RGBMult(rgbVect* c, float f)
-{
-	c->R *= f;
-	c->G *= f;
-	c->B *= f;
-}
 
 void RGBIntDiv(rgbVect* c, int d)
 {

@@ -16,7 +16,7 @@ void	RetrieveKeyboardInputs(DVector* inputList)
     SHORT    keys[256];
     memset(keys, 0, 256 * sizeof(SHORT));
     // set the key current status
-    for (int i = 0; i < DVectorSize(inputList); i++)
+    for (unsigned int i = 0; i < DVectorSize(inputList); i++)
     {
         int key = DVectorGetTyped(inputList, int, i);
         unsigned char keyCode = key & 255;

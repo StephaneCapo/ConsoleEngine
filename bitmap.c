@@ -188,7 +188,7 @@ LoadDIBitmap(const char *filename, /* I - File to load */
 		return (NULL);
 	}
 
-	if (fread(*info, 1, infosize, fp) < infosize)
+	if (fread(*info, 1, infosize, fp) < (unsigned int)infosize)
 	{
 		/* Couldn't read the bitmap header - return NULL... */
 		free(*info);
@@ -211,7 +211,7 @@ LoadDIBitmap(const char *filename, /* I - File to load */
 		return (NULL);
 	}
 
-	if (fread(bits, 1, bitsize, fp) < bitsize)
+	if (fread(bits, 1, bitsize, fp) < (unsigned int)bitsize)
 	{
 		/* Couldn't read bitmap - free memory and return NULL! */
 		free(*info);
@@ -293,14 +293,14 @@ SaveDIBitmap(const char *filename, /* I - File to load */
 		return (-1);
 	}
 
-	if (fwrite(info, 1, infosize, fp) < infosize)
+	if (fwrite(info, 1, infosize, fp) < (unsigned int)infosize)
 	{
 		/* Couldn't write the bitmap header - return... */
 		fclose(fp);
 		return (-1);
 	}
 
-	if (fwrite(bits, 1, bitsize, fp) < bitsize)
+	if (fwrite(bits, 1, bitsize, fp) < (unsigned int)bitsize)
 	{
 		/* Couldn't write the bitmap - return... */
 		fclose(fp);
