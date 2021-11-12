@@ -338,6 +338,7 @@ DisplaySettings* InitDisplay(unsigned int sx, unsigned int sy,unsigned int newFo
 	GetConsoleCursorInfo(result->mConsoleHandle, &result->mBackupCursorState);
 	HideCursor(result);
 
+	SetWindowLongW(result->mConsoleHWND, GWL_STYLE, GetWindowLong(result->mConsoleHWND, GWL_STYLE) & ~WS_MAXIMIZEBOX & ~WS_SIZEBOX &~WS_MINIMIZEBOX);
 	return result;
 }
 
@@ -655,3 +656,8 @@ void	ClearBuffer(DisplaySettings* settings, ConsoleColors FG, ConsoleColors BG)
 	}
 }
 
+// set console title
+void SetTitle(DisplaySettings* settings,const char* title)
+{
+	SetConsoleTitleA(title); // Name of Windows
+}

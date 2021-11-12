@@ -125,6 +125,9 @@ extern "C"
 	// if show == 0 don't display FPS else display FPS
 	void	ShowFPS(DisplaySettings* settings, int show);
 
+	// set console title
+	void SetTitle(DisplaySettings* settings,const char* title);
+
 #ifdef __cplusplus
 }// extern C
 #endif
