@@ -273,7 +273,7 @@ void	changeDisplaySize(DisplaySettings* displaysettings, unsigned int sx, unsign
 
 	// hard coded windows pixel size ( with borders ), given chararcters row / columns 
 	// this is really not a good way to do it 
-	MoveWindow(displaysettings->mConsoleHWND, 0, 0, (sx + 1) * currentFontInfo.dwFontSize.X + 16, (sy + 1) * currentFontInfo.dwFontSize.Y + 48, TRUE);
+	MoveWindow(displaysettings->mConsoleHWND, 0, 0, (sx /* + 1*/) * currentFontInfo.dwFontSize.X + 16, (sy /* + 1*/) * currentFontInfo.dwFontSize.Y + 48, TRUE);
 
 }
 
