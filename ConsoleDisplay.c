@@ -16,6 +16,7 @@ struct DisplaySettings
 	unsigned int				mSquaredFont;
 	CONSOLE_CURSOR_INFO			mBackupCursorState;
 	struct DisplayCharacter*	mDrawBuffer;
+	void*						mConsoleBuffer;
 	unsigned int				mDisplayFPS;
 };
 
@@ -329,7 +330,7 @@ DisplaySettings* InitDisplay(unsigned int sx, unsigned int sy,unsigned int newFo
 
 	// init draw buffer
 	result->mDrawBuffer = malloc(sx * sy * sizeof(DisplayCharacter));
-	
+	result->mConsoleBuffer = malloc(result->mSizeY * result->mSizeX * sizeof(CHAR_INFO));
 	// black screen
 	SetColor(result, 0, 0);
 
@@ -350,6 +351,7 @@ void	CloseDisplay(DisplaySettings* display)
 	SetColor(display, WHITE, BLACK);
 
 	free(display->mDrawBuffer);
+	free(display->mConsoleBuffer);
 
 	free(display);
 }
@@ -604,10 +606,7 @@ void	SwapBuffer(DisplaySettings* settings)
 
 	DisplayCharacter* frontBuffer = settings->mDrawBuffer;
 
-	CHAR_INFO* buffer=malloc(settings->mSizeY* settings->mSizeX * sizeof(CHAR_INFO));
-	memset(buffer, 0, settings->mSizeY * settings->mSizeX * sizeof(CHAR_INFO));
-
-	CHAR_INFO* wbuffer = buffer;
+	CHAR_INFO* wbuffer = settings->mConsoleBuffer;
 
 	for (unsigned int j = 0; j < settings->mSizeY; j++)
 	{
@@ -629,9 +628,8 @@ void	SwapBuffer(DisplaySettings* settings)
 
 	COORD coord = { 0, 0 }, size = { settings->mSizeX, settings->mSizeY };
 	SMALL_RECT rect = { 0, 0, settings->mSizeX, settings->mSizeY };
-	WriteConsoleOutputA(settings->mConsoleHandle, buffer, size,coord , &rect);
+	WriteConsoleOutputA(settings->mConsoleHandle, settings->mConsoleBuffer, size,coord , &rect);
 
-	free(buffer);
 }
 
 
