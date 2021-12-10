@@ -4,23 +4,23 @@
 
 typedef void* (*createObject)(struct ParamSection* init);
 
-typedef struct FactoryItem
+typedef struct CFactoryItem
 {
 	char			mObjectType[32];
 	createObject	mCreateFunc;
 
-}FactoryItem;
+}CFactoryItem;
 
-typedef struct Factory
+typedef struct CFactory
 {
 	DVector	mFItems;
-}Factory;
+}CFactory;
 
 
-void	InitFactory(Factory* factory);
-void	CloseFactory(Factory* factory);
+void	InitFactory(CFactory* factory);
+void	CloseFactory(CFactory* factory);
 
-void	RegisterObject(Factory* factory, char* objectName, createObject func);
+void	RegisterObject(CFactory* factory, char* objectName, createObject func);
 
 // return a new allocated object of the given type
-void* CreateObject(Factory* factory,char* objectType,struct ParamSection* params);
+void* CreateObject(CFactory* factory,char* objectType,struct ParamSection* params);
